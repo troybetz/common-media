@@ -7,4 +7,44 @@ var Media = require('../');
 var url = 'https://www.youtube.com/watch?v=a1Y73sPHKxw';
 var container = document.querySelector('.media-container');
 
-var player = new Media(url, container);
+/**
+ * Create new player
+ */
+
+window.player = new Media(url, container);
+
+/**
+ * Event handlers
+ */
+
+player.on('ready', function() {
+  console.log('READY');
+  console.log('player: ', player);
+
+  /**
+   * Bind button controls
+   */
+  
+  bindPlay(player);
+  bindPause(player);
+});
+
+/**
+ * Player controls
+ */
+
+function bindPlay(player) {
+  var play = document.getElementById('play');
+
+  play.addEventListener('click', function() {
+    player.play();
+  });
+}
+
+function bindPause(player) {
+  var pause = document.getElementById('pause');
+
+  pause.addEventListener('click', function() {
+    player.pause();
+  });
+}

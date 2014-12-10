@@ -12,6 +12,8 @@ var url = 'http://www.youtube.com/watch?v=iEe_eraFWWs';
 var container;
 var goodEmbedUrlStub;
 var badEmbedUrlStub;
+
+var wrapperMock;
 var goodWrapEmbedStub;
 var badWrapEmbedStub;
 
@@ -35,8 +37,13 @@ describe('common-media', function() {
       }, 0);
     });
 
+    wrapperMock = {
+      play: sinon.spy(),
+      pause: sinon.spy()
+    };
+
     goodWrapEmbedStub = sinon.spy(function(id, provider, cb) {
-      cb(null, {});
+      cb(null, wrapperMock);
     });
 
     badWrapEmbedStub = sinon.spy(function(id, provider, cb) {
@@ -122,6 +129,38 @@ describe('common-media', function() {
 
       embed.on('failure', function(err) {
         assert.ok(/embed must be an iframe/.test(err.message));
+        done();
+      });
+    });
+  });
+
+  describe('functionality', function() {
+    it('can play', function(done) {
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
+      var embed = new Media(url, container);
+
+      embed.on('ready', function() {
+        embed.play();
+        assert.ok(wrapperMock.play.called);
+        done();
+      });
+    });
+
+    it('can pause', function(done) {
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
+      var embed = new Media(url, container);
+
+      embed.on('ready', function() {
+        embed.pause();
+        assert.ok(wrapperMock.pause.called);
         done();
       });
     });

@@ -45,16 +45,36 @@ Media.prototype.load = function(url) {
       self.emit('failure', err);
       return;
     }
-    
+
     self.createWrapper(data.provider_name);
   });
+};
+
+/**
+ * Play whatever is embedded.
+ *
+ * @api public
+ */
+
+Media.prototype.play = function() {
+  this.wrapper.play();
+};
+
+/**
+ * Pause whatever is embedded.
+ *
+ * @api public
+ */
+
+Media.prototype.pause = function() {
+  this.wrapper.pause();
 };
 
 /**
  * Create a `provider` API wrapper
  *
  * @param {String} provider - type of embed
- * @api public
+ * @api private
  */
 
 Media.prototype.createWrapper = function(provider) {
@@ -65,6 +85,7 @@ Media.prototype.createWrapper = function(provider) {
       return;
     }
 
+    self.wrapper = wrapper;
     self.emit('ready');
   });
 };
