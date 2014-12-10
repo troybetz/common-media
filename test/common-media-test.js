@@ -5,6 +5,7 @@
 var assert = require('assert');
 var sinon = require('sinon');
 var proxyquire = require('proxyquireify')(require);
+var EventEmitter = require('events');
 
 var noembedResponse = require('./helpers/noembed-response');
 var url = 'http://www.youtube.com/watch?v=iEe_eraFWWs';
@@ -13,7 +14,7 @@ var container;
 var goodEmbedUrlStub;
 var badEmbedUrlStub;
 
-var wrapperMock;
+var wrapperStub;
 var goodWrapEmbedStub;
 var badWrapEmbedStub;
 
@@ -37,13 +38,15 @@ describe('common-media', function() {
       }, 0);
     });
 
-    wrapperMock = {
-      play: sinon.spy(),
-      pause: sinon.spy()
-    };
+    wrapperStub = new EventEmitter();
+    wrapperStub.play = sinon.spy();
+    wrapperStub.pause = sinon.spy();
 
     goodWrapEmbedStub = sinon.spy(function(id, provider, cb) {
-      cb(null, wrapperMock);
+      setTimeout(function() {
+        cb(null, wrapperStub);
+        wrapperStub.emit('ready');
+      });
     });
 
     badWrapEmbedStub = sinon.spy(function(id, provider, cb) {
@@ -145,7 +148,7 @@ describe('common-media', function() {
 
       embed.on('ready', function() {
         embed.play();
-        assert.ok(wrapperMock.play.called);
+        assert.ok(wrapperStub.play.called);
         done();
       });
     });
@@ -160,8 +163,62 @@ describe('common-media', function() {
 
       embed.on('ready', function() {
         embed.pause();
-        assert.ok(wrapperMock.pause.called);
+        assert.ok(wrapperStub.pause.called);
         done();
+      });
+    });
+  });
+
+  describe('events', function() {
+    it('should emit `ready` when embed has loaded', function(done) {
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
+      var embed = new Media(url, container);
+      embed.on('ready', done);
+    });
+
+    it('should emit `play` when embed is playing', function(done) {
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
+      var embed = new Media(url, container);
+
+      embed.on('ready', function() {
+        embed.on('play', done);
+        wrapperStub.emit('play');
+      });
+    });
+
+    it('should emit `pause` when embed is paused', function(done) {
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
+      var embed = new Media(url, container);
+
+      embed.on('ready', function() {
+        embed.on('pause', done);
+        wrapperStub.emit('pause');
+      });
+    });
+
+    it('should emit `end` when embed has ended', function(done) {
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
+      var embed = new Media(url, container);
+
+      embed.on('ready', function() {
+        embed.on('end', done);
+        wrapperStub.emit('end');
       });
     });
   });

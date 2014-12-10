@@ -86,6 +86,32 @@ Media.prototype.createWrapper = function(provider) {
     }
 
     self.wrapper = wrapper;
+    self.bindEvents();
+  });
+};
+
+/**
+ * Bind playback events to embed
+ *
+ * @api private
+ */
+
+Media.prototype.bindEvents = function() {
+  var self = this;
+
+  self.wrapper.on('ready', function() {
     self.emit('ready');
+  });
+
+  self.wrapper.on('play', function() {
+    self.emit('play');
+  });
+
+  self.wrapper.on('pause', function() {
+    self.emit('pause');
+  });
+
+  self.wrapper.on('end', function() {
+    self.emit('end');
   });
 };

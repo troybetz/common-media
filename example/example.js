@@ -29,6 +29,18 @@ player.on('ready', function() {
   bindPause(player);
 });
 
+player.on('play', function() {
+  console.log('PLAYING');
+});
+
+player.on('pause', function() {
+  console.log('PAUSED');
+});
+
+player.on('end', function() {
+  console.log('ENDED');
+});
+
 /**
  * Player controls
  */
