@@ -6,7 +6,8 @@ var assert = require('assert');
 var proxyquire = require('proxyquireify')(require);
 
 var noembedResponse = require('./helpers/noembed-response');
-var embedHTML;
+var embedHTMLContainer;
+var iframe;
 var container;
 var embedUrl;
 
@@ -17,14 +18,19 @@ describe('embed-url', function() {
     document.body.appendChild(container);
 
     /**
-     * Fake html returned from media-embed
+     * Fake html returned from media-embed.
      */
-    
-    embedHTML = document.createElement('iframe');
-    embedHTML.src = 'http://www.youtube.com/embed/bDOYN-6gdRE';
+
+    embedHTMLContainer = document.createElement('div');
+
+    // actual embed
+    iframe = document.createElement('iframe');
+    iframe.src = 'http://www.youtube.com/embed/bDOYN-6gdRE';
+
+    embedHTMLContainer.appendChild(iframe);
 
     var mediaEmbedStub = function(url, cb) {
-      return cb(null, embedHTML, noembedResponse);
+      return cb(null, embedHTMLContainer, noembedResponse);
     };
 
     /**
