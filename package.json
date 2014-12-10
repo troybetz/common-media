@@ -22,6 +22,9 @@
   },
   "homepage": "https://github.com/compedit/common-media",
   "dependencies": {
+    "common-soundcloud": "^1.0.0",
+    "common-vimeo": "^1.0.0",
+    "common-youtube": "^1.0.0",
     "media-embed": "^2.1.0"
   },
   "devDependencies": {
