@@ -4,6 +4,7 @@
 
 var EventEmitter = require('events');
 var embedUrl = require('./lib/embed-url');
+var wrapEmbed = require('./lib/wrap-embed');
 
 /**
  * Expose `Media`
@@ -44,5 +45,26 @@ Media.prototype.load = function(url) {
       self.emit('failure', err);
       return;
     }
+    
+    self.createWrapper(data.provider_name);
   });
-}
+};
+
+/**
+ * Create a `provider` API wrapper
+ *
+ * @param {String} provider - type of embed
+ * @api public
+ */
+
+Media.prototype.createWrapper = function(provider) {
+  var self = this;
+  wrapEmbed('media-embed', provider, function(err, wrapper) {
+    if (err) {
+      self.emit('failure', err);
+      return;
+    }
+
+    self.emit('ready');
+  });
+};

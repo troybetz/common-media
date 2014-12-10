@@ -10,8 +10,10 @@ var noembedResponse = require('./helpers/noembed-response');
 var url = 'http://www.youtube.com/watch?v=iEe_eraFWWs';
 
 var container;
-var goodEmbedRequest;
-var badEmbedRequest;
+var goodEmbedUrlStub;
+var badEmbedUrlStub;
+var goodWrapEmbedStub;
+var badWrapEmbedStub;
 
 describe('common-media', function() {
 
@@ -33,6 +35,14 @@ describe('common-media', function() {
       }, 0);
     });
 
+    goodWrapEmbedStub = sinon.spy(function(id, provider, cb) {
+      cb(null, {});
+    });
+
+    badWrapEmbedStub = sinon.spy(function(id, provider, cb) {
+      cb(new Error('embed must be an iframe'));
+    });
+
     /**
      * Base element
      */
@@ -47,7 +57,10 @@ describe('common-media', function() {
 
   describe('initialization', function() {
     it('should throw an error if container doesnt exist', function() {
-      var Media = proxyquire('../', {'./lib/embed-url': goodEmbedUrlStub});
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
 
       assert.throws(
         function() {
@@ -58,19 +71,57 @@ describe('common-media', function() {
     });
   });
 
-  describe('functionality', function() {
+  describe('embedding', function() {
     it('should embed a `url`', function() {
-      var Media = proxyquire('../', {'./lib/embed-url': goodEmbedUrlStub});
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
       var embed = new Media(url, container);
       assert.ok(goodEmbedUrlStub.calledWith(url));
     });
 
     it('should emit a `failure` event if embed fails', function(done) {
-      var Media = proxyquire('../', {'./lib/embed-url': badEmbedUrlStub});
+      var Media = proxyquire('../', {
+        './lib/embed-url': badEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
       var embed = new Media(url, container);
 
       embed.on('failure', function(err) {
         assert.ok(/embed failed/.test(err.message));
+        done();
+      });
+    });
+  });
+
+  describe('wrapping', function() {
+    it('should create an API wrapper', function(done) {
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': goodWrapEmbedStub
+      });
+
+      var embed = new Media(url, container);
+
+      embed.on('ready', function() {
+        assert.equal(goodWrapEmbedStub.args[0][1], 'YouTube');
+        done();
+      });
+    });
+
+    it('should emit a `failure` event if wrapping fails', function(done) {
+      var Media = proxyquire('../', {
+        './lib/embed-url': goodEmbedUrlStub,
+        './lib/wrap-embed': badWrapEmbedStub
+      });
+
+      var embed = new Media(url, container);
+
+      embed.on('failure', function(err) {
+        assert.ok(/embed must be an iframe/.test(err.message));
         done();
       });
     });
