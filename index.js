@@ -5,6 +5,7 @@
 var EventEmitter = require('events');
 var embedUrl = require('./lib/embed-url');
 var wrapEmbed = require('./lib/wrap-embed');
+var removeEmbed = require('./lib/remove-embed');
 
 /**
  * Expose `Media`
@@ -71,6 +72,22 @@ Media.prototype.pause = function() {
 };
 
 /**
+ * Remove embed, remove all event handlers and free up internal
+ * player for garbage collection.
+ *
+ * @api public
+ */
+
+Media.prototype.destroy = function() {
+  this.unbindEvents();
+  removeEmbed('media-embed', this.container);
+  
+  delete this.container;
+  delete this.wrapper;
+};
+
+
+/**
  * Create a `provider` API wrapper
  *
  * @param {String} provider - type of embed
@@ -114,4 +131,16 @@ Media.prototype.bindEvents = function() {
   self.wrapper.on('end', function() {
     self.emit('end');
   });
+};
+
+/**
+ * Remove embed event listeners
+ */
+
+Media.prototype.unbindEvents = function() {
+  this.wrapper.removeAllListeners('ready');
+  this.wrapper.removeAllListeners('play');
+  this.wrapper.removeAllListeners('pause');
+  this.wrapper.removeAllListeners('end');
+  this.wrapper.destroy();
 };

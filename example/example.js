@@ -27,6 +27,7 @@ player.on('ready', function() {
   
   bindPlay(player);
   bindPause(player);
+  bindDestroy(player);
 });
 
 player.on('play', function() {
@@ -58,5 +59,14 @@ function bindPause(player) {
 
   pause.addEventListener('click', function() {
     player.pause();
+  });
+}
+
+function bindDestroy(player) {
+  var destroy = document.getElementById('destroy');
+
+  destroy.addEventListener('click', function() {
+    player.destroy();
+    console.log('DESTROYED');
   });
 }
