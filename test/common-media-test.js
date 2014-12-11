@@ -7,64 +7,87 @@ var sinon = require('sinon');
 var proxyquire = require('proxyquireify')(require);
 var EventEmitter = require('events');
 
-var noembedResponse = require('./helpers/noembed-response');
-var url = 'http://www.youtube.com/watch?v=iEe_eraFWWs';
-
-var container;
-var goodEmbedUrlStub;
-var badEmbedUrlStub;
-
-var wrapperStub;
-var goodWrapEmbedStub;
-var badWrapEmbedStub;
-
+var embedUrlStub;
+var wrapEmbedStub;
 var removeEmbedStub;
+var wrapperStub;
+var container;
+var Media;
+var embed;
 
 describe('common-media', function() {
-
-  beforeEach(function() {
+  beforeEach(function(done) {
 
     /**
      * Stub out `embed-url`.
      */
+
+    embedUrlStub = {
+      good: sinon.spy(function(url, container, cb) {
+        setTimeout(function() {
+          cb(null, require('./helpers/noembed-response'));
+        }, 0);
+      }),
+
+      bad: sinon.spy(function(url, container, cb) {
+        setTimeout(function() {
+          cb(new Error('embed failed'));
+        }, 0);
+      })
+    };
+
+    /**
+     * Stub out `wrap-embed`
+     */
+
+    wrapEmbedStub = {
+      good: sinon.spy(function(id, provider, cb) {
+        setTimeout(function() {
+          cb(null, wrapperStub);
+          wrapperStub.emit('ready');
+        });
+      }),
+
+      bad: sinon.spy(function(id, provider, cb) {
+        cb(new Error('embed must be an iframe'));
+      })
+    };
+
+    /**
+     * Stub out `remove-embed`
+     */
     
-    goodEmbedUrlStub = sinon.spy(function(url, container, cb) {
-      setTimeout(function() { // simulate async request
-        cb(null, noembedResponse);
-      }, 0);
-    });
+    removeEmbedStub = sinon.spy();
 
-    badEmbedUrlStub = sinon.spy(function(url, container, cb) {
-      setTimeout(function() {
-        cb(new Error('embed failed')); // simulate async request
-      }, 0);
-    });
-
+    /**
+     * Stub out internal `wrapper` returned from `wrap-embed`
+     */
+    
     wrapperStub = new EventEmitter();
     wrapperStub.removeAllListeners = sinon.spy();
     wrapperStub.play = sinon.spy();
     wrapperStub.pause = sinon.spy();
     wrapperStub.destroy = sinon.spy();
 
-    goodWrapEmbedStub = sinon.spy(function(id, provider, cb) {
-      setTimeout(function() {
-        cb(null, wrapperStub);
-        wrapperStub.emit('ready');
-      });
-    });
-
-    badWrapEmbedStub = sinon.spy(function(id, provider, cb) {
-      cb(new Error('embed must be an iframe'));
-    });
-
-    removeEmbedStub = sinon.spy();
-
     /**
      * Base element
      */
-    
+
     container = document.createElement('div');
     document.body.appendChild(container);
+
+    /**
+     * Default configuration. Best case scenario, everything works.
+     */
+    
+    Media = proxyquire('../', {
+      './lib/embed-url': embedUrlStub.good,
+      './lib/wrap-embed': wrapEmbedStub.good,
+      './lib/remove-embed': removeEmbedStub
+    });
+
+    embed = new Media('a valid url', container);
+    embed.on('ready', done);
   });
 
   afterEach(function() {
@@ -73,14 +96,9 @@ describe('common-media', function() {
 
   describe('initialization', function() {
     it('should throw an error if container doesnt exist', function() {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
       assert.throws(
         function() {
-          new Media(url);
+          new Media('a valid url');
         },
         /container element must be specified/
       );
@@ -88,90 +106,36 @@ describe('common-media', function() {
   });
 
   describe('destruction', function() {
-    it('should remove an embed from the page', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub,
-        './lib/remove-embed': removeEmbedStub
-      });
-
-      var embed = new Media(url, container);
-
-      embed.on('ready', function() {
-        embed.destroy();
-        assert.ok(removeEmbedStub.calledWith('media-embed', container));
-        done();
-      });
+    beforeEach(function() {
+      embed.destroy();
     });
 
-    it('should unbind all event handlers', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub,
-        './lib/remove-embed': removeEmbedStub
-      });
-
-      var embed = new Media(url, container);
-
-      embed.on('ready', function() {
-        embed.destroy();
-        assert.equal(wrapperStub.removeAllListeners.callCount, 4);
-        done();
-      });
+    it('should remove the embed from the page', function() {
+      assert.ok(removeEmbedStub.calledWith('media-embed', container));
     });
 
-    it('should delete its internal state', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub,
-        './lib/remove-embed': removeEmbedStub
-      });
-
-      var embed = new Media(url, container);
-      
-      embed.on('ready', function() {
-        embed.destroy();
-        assert.equal(embed.container, undefined);
-        assert.equal(embed.wrapper, undefined);
-        done();
-      });
+    it('should unbind all event handlers', function() {
+      assert.equal(wrapperStub.removeAllListeners.callCount, 4);
     });
 
-    it('should destroy its `wrapper`', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub,
-        './lib/remove-embed': removeEmbedStub
-      });
+    it('should destroy its `wrapper`', function() {
+      assert.ok(wrapperStub.destroy.called);
+      assert.equal(embed.wrapper, undefined);
+    });
 
-      var embed = new Media(url, container);
-      
-      embed.on('ready', function() {
-        embed.destroy();
-        assert.ok(wrapperStub.destroy.called);
-        done();
-      });
+    it('should destroy its `container` reference', function() {
+      assert.equal(embed.container, undefined);
     });
   });
 
   describe('embedding', function() {
     it('should embed a `url`', function() {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
-      assert.ok(goodEmbedUrlStub.calledWith(url));
+      assert.ok(embedUrlStub.good.calledWith('a valid url'));
     });
 
     it('should emit a `failure` event if embed fails', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': badEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
+      Media = proxyquire('../', { './lib/embed-url': embedUrlStub.bad });
+      embed = new Media('a valid url', container);
 
       embed.on('failure', function(err) {
         assert.ok(/embed failed/.test(err.message));
@@ -181,27 +145,17 @@ describe('common-media', function() {
   });
 
   describe('wrapping', function() {
-    it('should create an API wrapper', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
-
-      embed.on('ready', function() {
-        assert.equal(goodWrapEmbedStub.args[0][1], 'YouTube');
-        done();
-      });
+    it('should create an API wrapper', function() {
+      assert.equal(wrapEmbedStub.good.args[0][1], 'YouTube');
     });
 
     it('should emit a `failure` event if wrapping fails', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': badWrapEmbedStub
+      Media = proxyquire('../', {
+        './lib/embed-url': embedUrlStub.good,
+        './lib/wrap-embed': wrapEmbedStub.bad
       });
 
-      var embed = new Media(url, container);
+      embed = new Media('a valid url', container);
 
       embed.on('failure', function(err) {
         assert.ok(/embed must be an iframe/.test(err.message));
@@ -211,88 +165,31 @@ describe('common-media', function() {
   });
 
   describe('functionality', function() {
-    it('can play', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
-
-      embed.on('ready', function() {
-        embed.play();
-        assert.ok(wrapperStub.play.called);
-        done();
-      });
+    it('should play', function() {
+      embed.play();
+      assert.ok(wrapperStub.play.called);
     });
 
-    it('can pause', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
-
-      embed.on('ready', function() {
-        embed.pause();
-        assert.ok(wrapperStub.pause.called);
-        done();
-      });
+    it('should pause', function() {
+      embed.pause();
+      assert.ok(wrapperStub.pause.called);
     });
   });
 
   describe('events', function() {
-    it('should emit `ready` when embed has loaded', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
-      embed.on('ready', done);
+    it('should emit `play` when playing', function(done) {
+      embed.on('play', done);
+      wrapperStub.emit('play');
     });
 
-    it('should emit `play` when embed is playing', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
-
-      embed.on('ready', function() {
-        embed.on('play', done);
-        wrapperStub.emit('play');
-      });
+    it('should emit `pause` when paused', function(done) {
+      embed.on('pause', done);
+      wrapperStub.emit('pause');
     });
 
-    it('should emit `pause` when embed is paused', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
-
-      embed.on('ready', function() {
-        embed.on('pause', done);
-        wrapperStub.emit('pause');
-      });
-    });
-
-    it('should emit `end` when embed has ended', function(done) {
-      var Media = proxyquire('../', {
-        './lib/embed-url': goodEmbedUrlStub,
-        './lib/wrap-embed': goodWrapEmbedStub
-      });
-
-      var embed = new Media(url, container);
-
-      embed.on('ready', function() {
-        embed.on('end', done);
-        wrapperStub.emit('end');
-      });
+    it('should emit `end` when finished', function(done) {
+      embed.on('end', done);
+      wrapperStub.emit('end');
     });
   });
 });

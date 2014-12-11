@@ -4,11 +4,12 @@
 
 var assert = require('assert');
 var proxyquire = require('proxyquireify')(require);
-
 var noembedResponse = require('./helpers/noembed-response');
+
+var container;
 var embedHTMLContainer;
 var iframe;
-var container;
+var mediaEmbedStub;
 var embedUrl;
 
 describe('embed-url', function() {
@@ -29,16 +30,27 @@ describe('embed-url', function() {
 
     embedHTMLContainer.appendChild(iframe);
 
-    var mediaEmbedStub = function(url, cb) {
-      return cb(null, embedHTMLContainer, noembedResponse);
+    /**
+     * Stub out `media-embed`
+     */
+
+    mediaEmbedStub = {
+      good: function(url, cb) {
+        return cb(null, embedHTMLContainer, noembedResponse);
+      },
+
+      bad: function(url, cb) {
+        var err = new Error('valid url required for embedding');
+        return cb(err);
+      }
     };
 
     /**
-     * Magic happens
+     * Default configuration. Best case scenario, everything works.
      */
      
     embedUrl = proxyquire('../lib/embed-url', {
-      'media-embed': mediaEmbedStub
+      'media-embed': mediaEmbedStub.good
     });
   });
 
@@ -69,13 +81,8 @@ describe('embed-url', function() {
   });
 
   it('should return an error if embed fails', function(done) {
-    var mediaEmbedStub = function(url, cb) {
-      var err = new Error('valid url required for embedding');
-      return cb(err);
-    };
-
     var embedUrl = proxyquire('../lib/embed-url', {
-      'media-embed': mediaEmbedStub
+      'media-embed': mediaEmbedStub.bad
     });
 
     embedUrl(noembedResponse.url, container, function(err, data) {

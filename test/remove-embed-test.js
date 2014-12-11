@@ -3,7 +3,6 @@
  */
 
 var assert = require('assert');
-
 var removeEmbed = require('../lib/remove-embed');
 
 describe('remove-embed', function() {
