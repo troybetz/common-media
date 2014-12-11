@@ -4,7 +4,7 @@
 
 var Media = require('../');
 
-var url = 'https://www.youtube.com/watch?v=a1Y73sPHKxw';
+var url = 'https://soundcloud.com/sylvanesso/coffee';
 var container = document.querySelector('.media-container');
 
 /**
@@ -19,7 +19,6 @@ window.player = new Media(url, container);
 
 player.on('ready', function() {
   console.log('READY');
-  console.log('player: ', player);
 
   /**
    * Bind button controls
