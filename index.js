@@ -43,10 +43,7 @@ Media.prototype = new EventEmitter();
 Media.prototype.load = function(url) {
   var self = this;
   embedUrl(url, self.container, function(err, data) {
-    if (err) {
-      self.emit('failure', err);
-      return;
-    }
+    if (err) throw err;
 
     self.createWrapper(data.provider_name);
   });
@@ -98,10 +95,7 @@ Media.prototype.destroy = function() {
 Media.prototype.createWrapper = function(provider) {
   var self = this;
   wrapEmbed('media-embed', provider, function(err, wrapper) {
-    if (err) {
-      self.emit('failure', err);
-      return;
-    }
+    if (err) throw err;
 
     self.wrapper = wrapper;
     self.bindEvents();

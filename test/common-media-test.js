@@ -16,7 +16,7 @@ var Media;
 var embed;
 
 describe('common-media', function() {
-  beforeEach(function(done) {
+  beforeEach(function() {
 
     /**
      * Stub out `embed-url`.
@@ -24,15 +24,11 @@ describe('common-media', function() {
 
     embedUrlStub = {
       good: sinon.spy(function(url, container, cb) {
-        setTimeout(function() {
-          cb(null, require('./helpers/noembed-response'));
-        }, 0);
+        cb(null, require('./helpers/noembed-response'));
       }),
 
       bad: sinon.spy(function(url, container, cb) {
-        setTimeout(function() {
-          cb(new Error('embed failed'));
-        }, 0);
+        return cb(new Error('embed failed'));
       })
     };
 
@@ -42,10 +38,8 @@ describe('common-media', function() {
 
     wrapEmbedStub = {
       good: sinon.spy(function(id, provider, cb) {
-        setTimeout(function() {
-          cb(null, wrapperStub);
-          wrapperStub.emit('ready');
-        });
+        cb(null, wrapperStub);
+        wrapperStub.emit('ready');
       }),
 
       bad: sinon.spy(function(id, provider, cb) {
@@ -87,7 +81,6 @@ describe('common-media', function() {
     });
 
     embed = Media('a valid url', container);
-    embed.on('ready', done);
   });
 
   afterEach(function() {
@@ -143,14 +136,15 @@ describe('common-media', function() {
       assert.ok(embedUrlStub.good.calledWith('a valid url'));
     });
 
-    it('should emit a `failure` event if embed fails', function(done) {
+    it('should emit a `failure` event if embed fails', function() {
       Media = proxyquire('../', { './lib/embed-url': embedUrlStub.bad });
-      embed = Media('a valid url', container);
 
-      embed.on('failure', function(err) {
-        assert.ok(/embed failed/.test(err.message));
-        done();
-      });
+      assert.throws(
+        function() {
+          Media('a valid url', container);
+        },
+        /embed failed/
+      );
     });
   });
 
@@ -159,18 +153,18 @@ describe('common-media', function() {
       assert.equal(wrapEmbedStub.good.args[0][1], 'YouTube');
     });
 
-    it('should emit a `failure` event if wrapping fails', function(done) {
+    it('should emit a `failure` event if wrapping fails', function() {
       Media = proxyquire('../', {
         './lib/embed-url': embedUrlStub.good,
         './lib/wrap-embed': wrapEmbedStub.bad
       });
 
-      embed = Media('a valid url', container);
-
-      embed.on('failure', function(err) {
-        assert.ok(/embed must be an iframe/.test(err.message));
-        done();
-      });
+      assert.throws(
+        function() {
+          Media('a valid url', container);
+        },
+        /embed must be an iframe/
+      );
     });
   });
 
