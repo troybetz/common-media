@@ -86,7 +86,7 @@ describe('common-media', function() {
       './lib/remove-embed': removeEmbedStub
     });
 
-    embed = new Media('a valid url', container);
+    embed = Media('a valid url', container);
     embed.on('ready', done);
   });
 
@@ -95,10 +95,20 @@ describe('common-media', function() {
   });
 
   describe('initialization', function() {
+    it('should create a new instance of `Media`', function() {
+      var Media = proxyquire('../', {
+        './lib/embed-url': embedUrlStub.good,
+        './lib/wrap-embed': wrapEmbedStub.good,
+        './lib/remove-embed': removeEmbedStub
+      });
+
+      assert.ok(Media('a valid url', container) instanceof Media);
+    });
+
     it('should throw an error if container doesnt exist', function() {
       assert.throws(
         function() {
-          new Media('a valid url');
+          Media('a valid url');
         },
         /container element must be specified/
       );
@@ -135,7 +145,7 @@ describe('common-media', function() {
 
     it('should emit a `failure` event if embed fails', function(done) {
       Media = proxyquire('../', { './lib/embed-url': embedUrlStub.bad });
-      embed = new Media('a valid url', container);
+      embed = Media('a valid url', container);
 
       embed.on('failure', function(err) {
         assert.ok(/embed failed/.test(err.message));
@@ -155,7 +165,7 @@ describe('common-media', function() {
         './lib/wrap-embed': wrapEmbedStub.bad
       });
 
-      embed = new Media('a valid url', container);
+      embed = Media('a valid url', container);
 
       embed.on('failure', function(err) {
         assert.ok(/embed must be an iframe/.test(err.message));

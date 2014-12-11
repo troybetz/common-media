@@ -21,6 +21,7 @@ module.exports = Media;
  */
 
 function Media(url, container) {
+  if (!(this instanceof Media)) return new Media(url, container);
   if (!container) throw new Error('container element must be specified.');
   this.container = container;
   this.load(url);
