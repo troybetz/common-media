@@ -77,13 +77,22 @@ Media.prototype.pause = function() {
  */
 
 Media.prototype.destroy = function() {
-  this.unbindEvents();
-  removeEmbed('media-embed', this.container);
+  this.destroyCurrentEmbed();
   
   delete this.container;
   delete this.wrapper;
 };
 
+/** 
+ * Destroy current embedded media and its wrapper.
+ *
+ * @api private
+ */
+
+Media.prototype.destroyCurrentEmbed = function() {
+  this.destroyWrapper();
+  removeEmbed('media-embed', this.container);
+};
 
 /**
  * Create a `provider` API wrapper
@@ -100,6 +109,19 @@ Media.prototype.createWrapper = function(provider) {
     self.wrapper = wrapper;
     self.bindEvents();
   });
+};
+
+/**
+ * Reset `wrapper`
+ *
+ * @api private
+ */
+
+Media.prototype.destroyWrapper = function() {
+  if (this.wrapper) {
+    this.unbindEvents();
+    delete this.wrapper;
+  }
 };
 
 /**
