@@ -110,7 +110,7 @@ Media.prototype.createWrapper = function(provider) {
     if (err) throw err;
 
     self.wrapper = wrapper;
-    self.bindEvents();
+    self.bindWrapperEvents();
   });
 };
 
@@ -122,19 +122,19 @@ Media.prototype.createWrapper = function(provider) {
 
 Media.prototype.destroyWrapper = function() {
   if (this.wrapper) {
-    this.unbindEvents();
+    this.unbindWrapperEvents();
     this.wrapper.destroy();
     delete this.wrapper;
   }
 };
 
 /**
- * Bind playback events to embed
+ * Bind playback events from `wrapper`
  *
  * @api private
  */
 
-Media.prototype.bindEvents = function() {
+Media.prototype.bindWrapperEvents = function() {
   var self = this;
 
   self.wrapper.on('ready', function() {
@@ -155,10 +155,10 @@ Media.prototype.bindEvents = function() {
 };
 
 /**
- * Remove embed event listeners
+ * Remove `wrapper` event listeners
  */
 
-Media.prototype.unbindEvents = function() {
+Media.prototype.unbindWrapperEvents = function() {
   this.wrapper.removeAllListeners('ready');
   this.wrapper.removeAllListeners('play');
   this.wrapper.removeAllListeners('pause');
