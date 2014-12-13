@@ -42,6 +42,9 @@ Media.prototype = new EventEmitter();
 
 Media.prototype.load = function(url) {
   var self = this;
+
+  self.destroyCurrentEmbed();
+  
   embedUrl(url, self.container, function(err, data) {
     if (err) throw err;
 
@@ -120,6 +123,7 @@ Media.prototype.createWrapper = function(provider) {
 Media.prototype.destroyWrapper = function() {
   if (this.wrapper) {
     this.unbindEvents();
+    this.wrapper.destroy();
     delete this.wrapper;
   }
 };
@@ -159,5 +163,4 @@ Media.prototype.unbindEvents = function() {
   this.wrapper.removeAllListeners('play');
   this.wrapper.removeAllListeners('pause');
   this.wrapper.removeAllListeners('end');
-  this.wrapper.destroy();
 };

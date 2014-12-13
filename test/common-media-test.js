@@ -107,6 +107,18 @@ describe('common-media', function() {
       embed.load('another valid url');
       assert.ok(wrapEmbedStub.calledWith('media-embed'));
     });
+
+    it('should destroy the current API wrapper before loading', function() {
+      embed.load('another valid url');
+
+      assert.equal(wrapperStub.removeAllListeners.callCount, 4);
+      assert.ok(wrapperStub.destroy.called);
+    });
+
+    it('should destroy the current embed before loading', function() {
+      embed.load('another valid url');
+      assert.ok(removeEmbedStub.calledWith('media-embed', container));
+    });
   });
 
   describe('Media#play()', function() {
