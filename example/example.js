@@ -3,15 +3,21 @@
  */
 
 var Media = require('../');
+var pickRandom = require('pick-random');
 
-var url = 'https://soundcloud.com/sylvanesso/coffee';
+var urls = [
+  'https://soundcloud.com/sylvanesso/coffee',
+  'http://vimeo.com/94502406',
+  'https://www.youtube.com/watch?v=2g811Eo7K8U'
+];
+
 var container = document.querySelector('.media-container');
 
 /**
  * Create new player
  */
 
-window.player = new Media(url, container);
+window.player = new Media(pickRandom(urls)[0], container);
 
 /**
  * Event handlers
@@ -19,14 +25,6 @@ window.player = new Media(url, container);
 
 player.on('ready', function() {
   console.log('READY');
-
-  /**
-   * Bind button controls
-   */
-  
-  bindPlay(player);
-  bindPause(player);
-  bindDestroy(player);
 });
 
 player.on('play', function() {
@@ -45,27 +43,25 @@ player.on('end', function() {
  * Player controls
  */
 
-function bindPlay(player) {
-  var play = document.getElementById('play');
+var play = document.getElementById('play');
+var pause = document.getElementById('pause');
+var load = document.getElementById('load');
+var destroy = document.getElementById('destroy');
 
-  play.addEventListener('click', function() {
-    player.play();
-  });
-}
+play.addEventListener('click', function() {
+  window.player.play();
+});
 
-function bindPause(player) {
-  var pause = document.getElementById('pause');
+pause.addEventListener('click', function() {
+  window.player.pause();
+});
 
-  pause.addEventListener('click', function() {
-    player.pause();
-  });
-}
+load.addEventListener('click', function() {
+  window.player.load(pickRandom(urls)[0]);
+});
 
-function bindDestroy(player) {
-  var destroy = document.getElementById('destroy');
+destroy.addEventListener('click', function() {
+  window.player.destroy();
+  console.log('DESTROYED');
+});
 
-  destroy.addEventListener('click', function() {
-    player.destroy();
-    console.log('DESTROYED');
-  });
-}

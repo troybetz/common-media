@@ -32,6 +32,7 @@
     "browserify": "^7.0.0",
     "http-server": "^0.7.4",
     "mocha": "^2.0.1",
+    "pick-random": "^1.0.0",
     "proxyquireify": "^1.1.0",
     "sinon": "^1.12.1",
     "watchify": "^2.1.1"
