@@ -47,7 +47,6 @@ Media.prototype.load = function(url) {
   
   embedUrl(url, self.container, function(err, data) {
     if (err) throw err;
-
     self.createWrapper(data.provider_name);
   });
 };
@@ -73,17 +72,15 @@ Media.prototype.pause = function() {
 };
 
 /**
- * Remove embed, remove all event handlers and free up internal
- * player for garbage collection.
+ * Destroy current embed, wrapper, and container.
+ * Renders `Media` instance inoperable.
  *
  * @api public
  */
 
 Media.prototype.destroy = function() {
   this.destroyCurrentEmbed();
-  
   delete this.container;
-  delete this.wrapper;
 };
 
 /** 
@@ -115,7 +112,7 @@ Media.prototype.createWrapper = function(provider) {
 };
 
 /**
- * Reset `wrapper`
+ * Delete the current API wrapper.
  *
  * @api private
  */
