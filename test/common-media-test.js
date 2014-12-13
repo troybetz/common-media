@@ -22,30 +22,18 @@ describe('common-media', function() {
      * Stub out `embed-url`.
      */
 
-    embedUrlStub = {
-      good: sinon.spy(function(url, container, cb) {
-        cb(null, require('./helpers/noembed-response'));
-      }),
-
-      bad: sinon.spy(function(url, container, cb) {
-        return cb(new Error('embed failed'));
-      })
-    };
+    embedUrlStub = sinon.spy(function(url, container, cb) {
+      cb(null, require('./helpers/noembed-response'));
+    });
 
     /**
      * Stub out `wrap-embed`
      */
 
-    wrapEmbedStub = {
-      good: sinon.spy(function(id, provider, cb) {
-        cb(null, wrapperStub);
-        wrapperStub.emit('ready');
-      }),
-
-      bad: sinon.spy(function(id, provider, cb) {
-        cb(new Error('embed must be an iframe'));
-      })
-    };
+    wrapEmbedStub = sinon.spy(function(id, provider, cb) {
+      cb(null, wrapperStub);
+      wrapperStub.emit('ready');
+    });
 
     /**
      * Stub out `remove-embed`
@@ -75,27 +63,28 @@ describe('common-media', function() {
      */
     
     Media = proxyquire('../', {
-      './lib/embed-url': embedUrlStub.good,
-      './lib/wrap-embed': wrapEmbedStub.good,
+      './lib/embed-url': embedUrlStub,
+      './lib/wrap-embed': wrapEmbedStub,
       './lib/remove-embed': removeEmbedStub
     });
 
-    embed = Media('a valid url', container);
+    embed = new Media('a valid url', container);
   });
 
   afterEach(function() {
     document.body.removeChild(container);
   });
 
-  describe('initialization', function() {
-    it('should create a new instance of `Media`', function() {
-      var Media = proxyquire('../', {
-        './lib/embed-url': embedUrlStub.good,
-        './lib/wrap-embed': wrapEmbedStub.good,
-        './lib/remove-embed': removeEmbedStub
-      });
+  describe('Media(url, container)', function() {
+    it('should populate attrs', function() {
+      var embed = Media('a valid url', container);
+      assert.equal(embed.container, container);
+    });
+  });
 
-      assert.ok(Media('a valid url', container) instanceof Media);
+  describe('new Media(url, container)', function() {
+    it('should populate attrs', function() {
+      assert.equal(embed.container, container);
     });
 
     it('should throw an error if container doesnt exist', function() {
@@ -108,79 +97,56 @@ describe('common-media', function() {
     });
   });
 
-  describe('destruction', function() {
-    beforeEach(function() {
-      embed.destroy();
-    });
-
-    it('should remove the embed from the page', function() {
-      assert.ok(removeEmbedStub.calledWith('media-embed', container));
-    });
-
-    it('should unbind all event handlers', function() {
-      assert.equal(wrapperStub.removeAllListeners.callCount, 4);
-    });
-
-    it('should destroy its `wrapper`', function() {
-      assert.ok(wrapperStub.destroy.called);
-      assert.equal(embed.wrapper, undefined);
-    });
-
-    it('should destroy its `container` reference', function() {
-      assert.equal(embed.container, undefined);
-    });
-  });
-
-  describe('embedding', function() {
+  describe('Media#load(url)', function() {
     it('should embed a `url`', function() {
-      assert.ok(embedUrlStub.good.calledWith('a valid url'));
+      embed.load('another valid url');
+      assert.ok(embedUrlStub.calledWith('another valid url'));
     });
 
-    it('should emit a `failure` event if embed fails', function() {
-      Media = proxyquire('../', { './lib/embed-url': embedUrlStub.bad });
-
-      assert.throws(
-        function() {
-          Media('a valid url', container);
-        },
-        /embed failed/
-      );
-    });
-  });
-
-  describe('wrapping', function() {
     it('should create an API wrapper', function() {
-      assert.equal(wrapEmbedStub.good.args[0][1], 'YouTube');
-    });
-
-    it('should emit a `failure` event if wrapping fails', function() {
-      Media = proxyquire('../', {
-        './lib/embed-url': embedUrlStub.good,
-        './lib/wrap-embed': wrapEmbedStub.bad
-      });
-
-      assert.throws(
-        function() {
-          Media('a valid url', container);
-        },
-        /embed must be an iframe/
-      );
+      embed.load('another valid url');
+      assert.ok(wrapEmbedStub.calledWith('media-embed'));
     });
   });
 
-  describe('functionality', function() {
+  describe('Media#play()', function() {
     it('should play', function() {
       embed.play();
       assert.ok(wrapperStub.play.called);
     });
+  });
 
+  describe('Media#pause()', function() {
     it('should pause', function() {
       embed.pause();
       assert.ok(wrapperStub.pause.called);
     });
   });
 
-  describe('events', function() {
+  describe('Media#destroy()', function() {
+    it('should unbind all event handlers', function() {
+      embed.destroy();
+      assert.equal(wrapperStub.removeAllListeners.callCount, 4);
+    });
+
+    it('should remove the embed from the page', function() {
+      embed.destroy();
+      assert.ok(removeEmbedStub.calledWith('media-embed', container));
+    });
+
+    it('should destroy its `container` reference', function() {
+      embed.destroy();
+      assert.equal(embed.container, undefined);
+    });
+
+    it('should destroy its `wrapper`', function() {
+      embed.destroy();
+      assert.ok(wrapperStub.destroy.called);
+      assert.equal(embed.wrapper, undefined);
+    });
+  });
+
+  describe('playback events', function() {
     it('should emit `play` when playing', function(done) {
       embed.on('play', done);
       wrapperStub.emit('play');

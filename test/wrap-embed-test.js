@@ -24,7 +24,7 @@ describe('wrap-embed', function() {
     });
   });
 
-  it('can wrap a YouTube video', function(done) {
+  it('should wrap a YouTube video', function(done) {
     wrapEmbed('media-embed', 'YouTube', function(err, player) {
       assert.ok(!err);
       assert.ok(YouTube.calledWith('media-embed'));
@@ -32,7 +32,7 @@ describe('wrap-embed', function() {
     });
   });
 
-  it('can wrap a SoundCloud widget', function(done) {
+  it('should wrap a SoundCloud widget', function(done) {
     wrapEmbed('media-embed', 'SoundCloud', function(err, player) {
       assert.ok(!err);
       assert.ok(SoundCloud.calledWith('media-embed'));
@@ -40,7 +40,7 @@ describe('wrap-embed', function() {
     });
   });
 
-  it('can wrap a Vimeo video', function(done) {
+  it('should wrap a Vimeo video', function(done) {
     wrapEmbed('media-embed', 'Vimeo', function(err, player) {
       assert.ok(!err);
       assert.ok(Vimeo.calledWith('media-embed'));

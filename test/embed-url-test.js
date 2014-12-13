@@ -58,7 +58,7 @@ describe('embed-url', function() {
     document.body.removeChild(container);
   });
 
-  it('embeds a `url`', function(done) {
+  it('should embed a `url`', function(done) {
     embedUrl(noembedResponse.url, container, function() {
       assert.ok(container.querySelector('iframe'));  
       assert.ok(/bDOYN-6gdRE/.test(container.querySelector('iframe').src));
@@ -66,7 +66,7 @@ describe('embed-url', function() {
     });
   });
 
-  it('adds an id of `media-embed` to the embed', function(done) {
+  it('should add an id of `media-embed` to the embed', function(done) {
     embedUrl(noembedResponse.url, container, function() {
       assert.equal(container.querySelector('iframe').id, 'media-embed');  
       done();
@@ -77,7 +77,7 @@ describe('embed-url', function() {
     embedUrl(noembedResponse.url, container, function(err, data) {
       assert.equal(data, noembedResponse);
       done();
-    });;
+    });
   });
 
   it('should return an error if embed fails', function(done) {
